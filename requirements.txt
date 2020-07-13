@@ -1,0 +1,8 @@
+albumentations
+numpy
+opencv-python
+pretrainedmodels
+scikit-learn
+tensorboardX
+torch
+torchvision
