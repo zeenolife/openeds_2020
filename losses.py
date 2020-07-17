@@ -5,9 +5,15 @@ from torch import nn
 from torch.nn import NLLLoss2d
 
 
-def miou_round(preds, trues, t=0.5):
-    preds = (preds > t).float()
-    return miou(preds, trues, per_image=True)
+def miou_round(preds, trues, num_classes=4):
+
+    preds = preds.float()
+    ious = []
+    for i in range(num_classes):
+
+        ious.append(get_iou((preds == i).float(), (trues == i).float(), per_image=True))
+
+    return torch.mean(torch.tensor(ious))
 
 
 def dice_round(preds, trues, t=0.5):
@@ -20,7 +26,7 @@ def jaccard_round(preds, trues, t=0.5, per_image=False):
     return 1 - jaccard(preds, trues, per_image=per_image)
 
 
-def miou(outputs, targets, per_image=True):
+def get_iou(outputs, targets, per_image=True):
 
     batch_size = outputs.size()[0]
     eps = 1e-3

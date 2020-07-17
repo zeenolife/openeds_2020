@@ -213,13 +213,13 @@ def evaluate_val(args, data_val, miou_best, model, snapshot_name, current_epoch,
                     'state_dict': model.state_dict(),
                     'miou_best': miou,
 
-                }, args.output_dir + snapshot_name + "_best_miou")
+                }, args.output_dir + snapshot_name + "_best_miou.pt")
             miou_best = miou
         torch.save({
             'epoch': current_epoch + 1,
             'state_dict': model.state_dict(),
             'miou_best': miou_best,
-        }, args.output_dir + snapshot_name + "_last")
+        }, args.output_dir + snapshot_name + "_last.pt")
         print("miou: {}, miou_best: {}".format(miou, miou_best))
     return miou_best
 
@@ -232,35 +232,20 @@ def validate(net, data_loader, predictions_dir):
     with torch.no_grad():
         for sample in tqdm(data_loader):
             imgs = sample["image"].cuda().float()
-            mask = sample["mask"].cuda().float()
-            mask_orig = sample["mask_orig"].cuda().long().cpu().numpy()
+            mask_orig = sample["mask_orig"].cuda().float()
 
             output = net(imgs)
-            binary_pred = torch.sigmoid(output)
+            pred = torch.softmax(output, dim=1)
+            argmax = torch.argmax(pred, dim=1)
 
             for i in range(output.shape[0]):
-                d = miou_round(binary_pred, mask, t=0.5).item()
+                d = miou_round(argmax, mask_orig).item()
                 mious.append(d)
-                cv2.imwrite(os.path.join(preds_dir, "test_" + sample["img_name"][i] + "_prediction_0.png"),
-                            (binary_pred[i, 0].cpu().numpy() > 0.5) * 256)
-
-                cv2.imwrite(os.path.join(preds_dir, "test_" + sample["img_name"][i] + "_prediction_1.png"),
-                            (binary_pred[i, 1].cpu().numpy() > 0.5) * 256)
-
-                cv2.imwrite(os.path.join(preds_dir, "test_" + sample["img_name"][i] + "_prediction_2.png"),
-                            (binary_pred[i, 2].cpu().numpy() > 0.5) * 256)
-
-                cv2.imwrite(os.path.join(preds_dir, "test_" + sample["img_name"][i] + "_prediction_3.png"),
-                            (binary_pred[i, 3].cpu().numpy() > 0.5) * 256)
+                cv2.imwrite(os.path.join(preds_dir, "test_" + sample["img_name"][i] + "_prediction.png"),
+                            argmax[i].cpu().numpy().astype(np.uint8) * 64)
 
                 cv2.imwrite(os.path.join(preds_dir, "test_" + sample["img_name"][i] + "_mask_orig.png"),
-                            mask_orig[i].astype(np.uint8) * 64)
-
-
-
-
-
-
+                            mask_orig[i].cpu().numpy().astype(np.uint8) * 64)
 
     return np.mean(mious)
 
@@ -277,10 +262,12 @@ def train_epoch(current_epoch, loss_functions, model, optimizer, scheduler, trai
     for i, sample in enumerate(iterator):
         imgs = sample["image"].cuda()
         masks = sample["mask"].cuda().float()
+        masks_orig = sample["mask_orig"].cuda().float()
         out_mask = model(imgs)
         with torch.no_grad():
-            pred = torch.sigmoid(out_mask)
-            ious = miou_round(pred, masks, t=0.5).item()
+            pred = torch.softmax(out_mask, dim=1)
+            argmax = torch.argmax(pred, dim=1)
+            ious = miou_round(argmax, masks_orig).item()
 
         mious.update(ious, imgs.size(0))
 

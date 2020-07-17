@@ -43,7 +43,7 @@ class OpenEDSDataset(Dataset):
 
         # Pack into container
         sample['img_name'] = self.names[idx].replace('/', '_').replace('.npy', '').replace('label_', '')
-        sample['mask_orig'] = mask_orig
+        sample['mask_orig'] = sample['mask']
         sample['mask'] = torch.from_numpy(np.ascontiguousarray(mask)).float()
         sample['image'] = img_to_tensor(np.ascontiguousarray(sample['image']), self.normalize)
 
