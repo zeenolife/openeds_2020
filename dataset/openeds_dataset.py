@@ -49,3 +49,56 @@ class OpenEDSDataset(Dataset):
 
         return sample
 
+
+class OpenEDSDatasetTest(Dataset):
+    def __init__(self, data_path, save_path, transforms=None, normalize=None, num_classes=4):
+        super().__init__()
+        self.data_path = data_path
+        self.save_path = save_path
+
+        labels_file = os.path.join(data_path, 'labels.txt')
+        with open(labels_file) as f:
+            labels = [_.strip() for _ in f.readlines()]
+            labels = [_.replace('.npy', '.png').replace('label_', '') for _ in labels]
+            labels = set(labels)
+
+        images_file = os.path.join(data_path, 'images.txt')
+        with open(images_file) as f:
+            self.names = [_.strip() for _ in f.readlines()]
+            self.names = [_.replace('.png', '.npy') for _ in self.names if _ not in labels]
+
+        self.init_save_dirs()
+
+        self.num_classes = num_classes
+        self.normalize = normalize
+        self.transforms = transforms
+
+    def init_save_dirs(self):
+
+        with open(os.path.join(self.save_path, 'output.txt'), 'w') as f:
+            for img_name in self.names:
+                f.write('{}\n'.format(img_name))
+
+        participant_dirs = set([_.split('/')[0] for _ in self.names])
+        for participant_dir in participant_dirs:
+            os.makedirs(os.path.join(self.save_path, participant_dir), exist_ok=True)
+
+    def __len__(self):
+        return len(self.names)
+
+    def __getitem__(self, idx):
+
+        # Read image
+        image_path = os.path.join(self.data_path, self.names[idx])
+        image = cv2.imread(image_path, cv2.IMREAD_COLOR)
+        image = cv2.copyMakeBorder(image, 8, 8, 0, 0, cv2.BORDER_CONSTANT, value=0)
+
+        # Apply augmentations
+        sample = self.transforms(image=image)
+
+        # Pack into container
+        sample['img_name'] = self.names[idx]
+        sample['image'] = img_to_tensor(np.ascontiguousarray(sample['image']), self.normalize)
+
+        return sample
+
