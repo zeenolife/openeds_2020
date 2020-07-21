@@ -38,10 +38,11 @@ if __name__ == '__main__':
     transforms = Compose([
     ])
     dataset = OpenEDSDatasetTest(data_path=args.data_path,
+                                 labels_file='test.txt',
                                  save_path=os.path.join(args.save_dir, args.save_name),
                                  transforms=transforms,
                                  normalize=conf['input'].get('normalize', None))
-    data_loader = DataLoader(dataset, batch_size=1, num_workers=0, shuffle=False, pin_memory=False)
+    data_loader = DataLoader(dataset, batch_size=1, num_workers=8, shuffle=False, pin_memory=False)
     with torch.no_grad():
         for sample in tqdm(data_loader):
 

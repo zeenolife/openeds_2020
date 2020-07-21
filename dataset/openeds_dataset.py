@@ -51,21 +51,23 @@ class OpenEDSDataset(Dataset):
 
 
 class OpenEDSDatasetTest(Dataset):
-    def __init__(self, data_path, save_path, transforms=None, normalize=None, num_classes=4):
+    def __init__(self,
+                 data_path,
+                 labels_file,
+                 save_path,
+                 transforms=None,
+                 normalize=None,
+                 num_classes=4,
+                 cumulative=False):
+
         super().__init__()
         self.data_path = data_path
         self.save_path = save_path
+        self.cumulative = cumulative
 
-        labels_file = os.path.join(data_path, 'labels.txt')
+        labels_file = os.path.join(data_path, labels_file)
         with open(labels_file) as f:
-            labels = [_.strip() for _ in f.readlines()]
-            labels = [_.replace('.npy', '.png').replace('label_', '') for _ in labels]
-            labels = set(labels)
-
-        images_file = os.path.join(data_path, 'images.txt')
-        with open(images_file) as f:
             self.names = [_.strip() for _ in f.readlines()]
-            self.names = [_.replace('.png', '.npy') for _ in self.names if _ not in labels]
 
         self.init_save_dirs()
 
@@ -75,8 +77,10 @@ class OpenEDSDatasetTest(Dataset):
 
     def init_save_dirs(self):
 
-        with open(os.path.join(self.save_path, 'output.txt'), 'w') as f:
+        write_mode = 'a' if self.cumulative else 'w'
+        with open(os.path.join(self.save_path, 'output.txt'), write_mode) as f:
             for img_name in self.names:
+                img_name = img_name.replace('label_', '')
                 f.write('{}\n'.format(img_name))
 
         participant_dirs = set([_.split('/')[0] for _ in self.names])
@@ -89,7 +93,7 @@ class OpenEDSDatasetTest(Dataset):
     def __getitem__(self, idx):
 
         # Read image
-        image_path = os.path.join(self.data_path, self.names[idx])
+        image_path = os.path.join(self.data_path, self.names[idx].replace('/label_', '/').replace('.npy', '.png'))
         image = cv2.imread(image_path, cv2.IMREAD_COLOR)
         image = cv2.copyMakeBorder(image, 8, 8, 0, 0, cv2.BORDER_CONSTANT, value=0)
 
