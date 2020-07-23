@@ -94,7 +94,12 @@ def main():
     cudnn.benchmark = True
 
     conf = load_config(args.config)
-    model = models.__dict__[conf['network']](seg_classes=conf['num_classes'], backbone_arch=conf['encoder'])
+    models_zoo = conf.get('models_zoo', 'selim')
+    if models_zoo == 'qubvel':
+        import segmentation_models_pytorch as smp
+        model = smp.Unet(encoder_name=conf['encoder'], classes=conf['num_classes'])
+    else:
+        model = models.__dict__[conf['network']](seg_classes=conf['num_classes'], backbone_arch=conf['encoder'])
 
     model = model.cuda()
     if args.distributed:
@@ -169,15 +174,17 @@ def main():
     for epoch in range(start_epoch, conf['optimizer']['schedule']['epochs']):
         if train_sampler:
             train_sampler.set_epoch(epoch)
+
+        model_encoder_stages = model.module.encoder_stages if models_zoo == 'selim' else model.module.encoder
         if epoch < args.freeze_epochs:
             print("Freezing encoder!!!")
-            model.module.encoder_stages.eval()
-            for p in model.module.encoder_stages.parameters():
+            model_encoder_stages.eval()
+            for p in model_encoder_stages.parameters():
                 p.requires_grad = False
         else:
             print("Unfreezing encoder!!!")
-            model.module.encoder_stages.train()
-            for p in model.module.encoder_stages.parameters():
+            model_encoder_stages.train()
+            for p in model_encoder_stages.parameters():
                 p.requires_grad = True
         train_epoch(current_epoch, loss_functions, model, optimizer, scheduler, train_data_loader, summary_writer, conf,
                     args.local_rank)

@@ -43,7 +43,12 @@ def predict_ensemble(args):
         data_loader = DataLoader(dataset, batch_size=1, num_workers=0, shuffle=False, pin_memory=False)
 
         conf = load_config(model_config.config_path)
-        model = models.__dict__[conf['network']](seg_classes=4, backbone_arch=conf['encoder'])
+        models_zoo = conf.get('models_zoo', 'selim')
+        if models_zoo == 'qubvel':
+            import segmentation_models_pytorch as smp
+            model = smp.Unet(encoder_name=conf['encoder'], classes=conf['num_classes'])
+        else:
+            model = models.__dict__[conf['network']](seg_classes=4, backbone_arch=conf['encoder'])
         model = torch.nn.DataParallel(model).cuda()
 
         checkpoint_path = model_config.weights_path

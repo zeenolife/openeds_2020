@@ -3,5 +3,6 @@ numpy
 opencv-python
 pretrainedmodels
 scikit-learn
+segmentation-models-pytorch
 tensorboardX
 tqdm
