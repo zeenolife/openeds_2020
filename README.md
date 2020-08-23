@@ -62,7 +62,7 @@ You can download pretrained models here:
 
 ## Results
 
-Our models achieves the following performance on :
+Our models achieve the following performance on:
 
 ### [OpenEDS 2020 Sparse Semantic Segmentation Leaderboard](https://evalai.cloudcv.org/web/challenges/challenge-page/603/leaderboard/1680)
 
@@ -74,5 +74,5 @@ Our models achieves the following performance on :
 
 
 ## Acknowledgement
-We thank Selim Sefirbekov and Pavel Yakubovskiy for wonderful codebase that we extensively used during competition. 
+We thank [Selim Seferbekov](https://github.com/selimsef) and [Pavel Yakubovskiy](https://github.com/qubvel) for wonderful codebase that we extensively used during competition. 
 
