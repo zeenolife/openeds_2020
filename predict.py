@@ -17,9 +17,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser("OpenEDS Predictor")
     arg = parser.add_argument
     arg('--config', metavar='CONFIG_FILE', default='configs/se50.json', help='path to configuration file')
-    arg('--data-path', type=str, default='/media/almaz/1tb/openeds/openEDS2020-SparseSegmentation/participant')
+    arg('--data-path', type=str, default='/data/openeds/openEDS2020-SparseSegmentation/participant')
     arg('--gpu', type=str, default='0', help='List of GPUs for parallel training, e.g. 0,1,2,3')
-    arg('--save-dir', type=str, default='/media/almaz/1tb/openeds/predictions/')
+    arg('--save-dir', type=str, default='/data/openeds/predictions/')
     arg('--save-name', type=str, default='se50/')
     arg('--model', type=str, default='')
 

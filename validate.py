@@ -9,8 +9,8 @@ from losses import miou_round
 if __name__ == '__main__':
     parser = argparse.ArgumentParser("OpenEDS Validator")
     arg = parser.add_argument
-    arg('--data-path', type=str, default='/media/almaz/1tb/openeds/openEDS2020-SparseSegmentation/participant')
-    arg('--pred-path', type=str, default='/media/almaz/1tb/openeds/predictions/ensemble')
+    arg('--data-dir', type=str, default='/data/openeds/openEDS2020-SparseSegmentation/participant')
+    arg('--pred-dir', type=str, default='/data/openeds/predictions/ensemble')
     arg('--fold', type=int, default='0')
 
     args = parser.parse_args()

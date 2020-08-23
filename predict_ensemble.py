@@ -22,8 +22,65 @@ from dataset.openeds_dataset import OpenEDSDatasetTest
 
 ModelConfig = namedtuple("ModelConfig", "config_path weights_path weight")
 configs = [
-    ModelConfig("configs/se50.json", "/home/almaz/Downloads/segmentation_scse_unet_seresnext50_0_best_miou.pt", 1),
+    ModelConfig("configs/efficientnet-b7.json", "weights/unet_efficientnet-b7.pt", 1),
+
 ]
+
+
+def predict_fast(args):
+
+    transforms = Compose([
+    ])
+    dataset = OpenEDSDatasetTest(data_path=args.data_path,
+                                 labels_file=args.label_file,
+                                 save_path=args.save_dir,
+                                 transforms=transforms,
+                                 normalize={"mean": [0.485, 0.456, 0.406], "std": [0.229, 0.224, 0.225]},
+                                 cumulative=True)
+    data_loader = DataLoader(dataset, batch_size=1, num_workers=8, shuffle=False, pin_memory=False)
+
+    models = []
+    for model_config in configs:
+        conf = load_config(model_config.config_path)
+        models_zoo = conf.get('models_zoo', 'selim')
+        if models_zoo == 'qubvel':
+            import segmentation_models_pytorch as smp
+            model = smp.Unet(encoder_name=conf['encoder'], classes=conf['num_classes'])
+        else:
+            model = models.__dict__[conf['network']](seg_classes=4, backbone_arch=conf['encoder'])
+        model = torch.nn.DataParallel(model).cuda()
+
+        checkpoint_path = model_config.weights_path
+        checkpoint = torch.load(checkpoint_path, map_location="cpu")
+        model.load_state_dict(checkpoint['state_dict'])
+        model.eval()
+        models.append([model, model_config])
+
+    with torch.no_grad():
+        for sample in tqdm(data_loader):
+            imgs = sample["image"].cuda().float()
+
+            preds_dict = {}
+            for model, model_config in models:
+
+                output = model(imgs)
+                output_flip = torch.flip(model(torch.flip(imgs, dims=(3,))), dims=(3,))
+
+                output = (output + output_flip) / 2
+                output = output.cpu()
+
+                for i in range(output.shape[0]):
+                    img_name = sample["img_name"][i]
+
+                    if img_name not in preds_dict:
+                        preds_dict[img_name] = {'output': output[i] * model_config.weight,
+                                                'total_weight': model_config.weight}
+                    else:
+                        preds_dict[img_name]['output'] += output[i] * model_config.weight
+                        preds_dict[img_name]['total_weight'] += model_config.weight
+
+            preds_total = normalize_preds(preds_dict)
+            save_preds(args, preds_total)
 
 
 def predict_ensemble(args):
@@ -40,7 +97,7 @@ def predict_ensemble(args):
                                      transforms=transforms,
                                      normalize={"mean": [0.485, 0.456, 0.406], "std": [0.229, 0.224, 0.225]},
                                      cumulative=True)
-        data_loader = DataLoader(dataset, batch_size=1, num_workers=0, shuffle=False, pin_memory=False)
+        data_loader = DataLoader(dataset, batch_size=1, num_workers=8, shuffle=False, pin_memory=False)
 
         conf = load_config(model_config.config_path)
         models_zoo = conf.get('models_zoo', 'selim')
@@ -103,11 +160,11 @@ def save_preds(args, preds_dict):
 def main():
     parser = argparse.ArgumentParser("OpenEDS One-by-One Predictor")
     arg = parser.add_argument
-    arg('--data-path', type=str, default='/media/almaz/1tb/openeds/openEDS2020-SparseSegmentation/participant')
+    arg('--data-dir', type=str, default='openEDS2020-SparseSegmentation/participant')
     arg('--label-file', type=str,
         default='fold_0_val.txt',
         help='Text file with all images for inference')
-    arg('--save-dir', type=str, default='/media/almaz/1tb/openeds/predictions/ensemble')
+    arg('--save-dir', type=str, default='/data/openeds/ensemble_baseline')
     arg('--gpu', type=str, default='0', help='List of GPUs for parallel training, e.g. 0,1,2,3')
     args = parser.parse_args()
 
@@ -116,9 +173,7 @@ def main():
     os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
-    preds_total = predict_ensemble(args)
-    preds_total = normalize_preds(preds_total)
-    save_preds(args, preds_total)
+    predict_fast(args)
 
 
 if __name__ == '__main__':

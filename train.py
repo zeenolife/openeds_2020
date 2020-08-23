@@ -43,10 +43,10 @@ def create_train_transforms(conf):
     height = conf['crop_height']
     width = conf['crop_width']
     return Compose([
-        OneOf([
-            RandomSizedCrop(min_max_height=(int(height * 0.8), int(height * 1.2)), w2h_ratio=1., height=height,
-                            width=width, p=0.8),
-            RandomCrop(height=height, width=width, p=0.2)], p=1),
+        # OneOf([
+        #     RandomSizedCrop(min_max_height=(int(height * 0.8), int(height * 1.2)), w2h_ratio=1., height=height,
+        #                     width=width, p=0.8),
+        #     RandomCrop(height=height, width=width, p=0.2)], p=1),
         HorizontalFlip(),
         ImageCompression(p=0.1),
         RandomBrightnessContrast(p=0.4),
@@ -70,7 +70,7 @@ def main():
     arg('--output-dir', type=str, default='weights/')
     arg('--resume', type=str, default='')
     arg('--prefix', type=str, default='segmentation_')
-    arg('--data-dir', type=str, default='/media/almaz/1tb/openeds/openEDS2020-SparseSegmentation/participant')
+    arg('--data-dir', type=str, default='/data/openeds/openEDS2020-SparseSegmentation/participant')
     arg('--fold', type=int, default=0)
     arg('--logdir', type=str, default='logs')
     arg('--zero-score', action='store_true', default=False)

@@ -30,6 +30,6 @@ def main(labels_dir):
 
 
 if __name__ == '__main__':
-    main('/media/almaz/1tb/openeds/openEDS2020-SparseSegmentation/participant')
+    main('/data/openeds/openEDS2020-SparseSegmentation/participant')
     # main('/path/to/labels.txt-dir',
     #      'labels.txt')
