@@ -1,5 +1,7 @@
 # 1st Place Solution for Facebook's OpenEDS 2020 Sparse Semantic Segmentation Challenge
 ![demo image](resources/demo.png)
+- Authors: [Almaz Zinollayev](https://github.com/zeenolife), [Zhanseri Ikram](https://github.com/Zhaans)
+
 - Video presentation for ECCV 2020: https://youtu.be/xXqDsPZyZic
 
 - Competition: https://evalai.cloudcv.org/web/challenges/challenge-page/603/overview
